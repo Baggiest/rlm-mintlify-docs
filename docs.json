@@ -1,0 +1,39 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "linden",
+  "name": "RLM",
+  "colors": {
+    "primary": "#16A34A",
+    "light": "#07C983",
+    "dark": "#15803D"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Overview",
+        "pages": ["index", "getting-started"]
+      },
+      {
+        "group": "API",
+        "pages": ["api", "api/rlm"]
+      },
+      {
+        "group": "Backends",
+        "pages": ["backends"]
+      },
+      {
+        "group": "Environments",
+        "pages": [
+          "environments",
+          "environments/local",
+          "environments/docker",
+          "environments/modal"
+        ]
+      },
+      {
+        "group": "Trajectories",
+        "pages": ["trajectories"]
+      }
+    ]
+  }
+}

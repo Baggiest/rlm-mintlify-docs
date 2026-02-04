@@ -1,0 +1,118 @@
+---
+title: Backends
+description: Language model provider configuration
+---
+
+RLMs natively support a wide range of language model providers, including `OpenAI`, `Anthropic`, `Portkey`, `OpenRouter`, and `LiteLLM`. Additional providers can be supported with minimal effort. The `backend_kwargs` are named arguments passed directly to the backend client.
+
+## OpenAI
+
+```python
+rlm = RLM(
+    backend="openai",
+    backend_kwargs={
+        "api_key": os.getenv("OPENAI_API_KEY"),
+        "model_name": "gpt-5-mini",
+        "base_url": "https://api.openai.com/v1",
+    },
+)
+```
+
+## Anthropic
+
+```python
+rlm = RLM(
+    backend="anthropic",
+    backend_kwargs={
+        "api_key": os.getenv("ANTHROPIC_API_KEY"),
+        "model_name": "claude-sonnet-4-20250514",
+    },
+)
+```
+
+## Portkey
+
+[Portkey](https://portkey.ai/docs/api-reference/sdk/python) is a client for routing to hundreds of different open and closed frontier models.
+
+```python
+rlm = RLM(
+    backend="portkey",
+    backend_kwargs={
+        "api_key": os.getenv("PORTKEY_API_KEY"),
+        "model_name": "@openai/gpt-5-mini",
+    },
+)
+```
+
+## OpenRouter
+
+[OpenRouter](https://openrouter.ai/docs) is a multi-provider gateway for accessing a wide range of models from different providers through one API.
+
+```python
+rlm = RLM(
+    backend="openrouter",
+    backend_kwargs={
+        "api_key": os.getenv("OPENROUTER_API_KEY"),
+        "model_name": "openai/gpt-5-mini",
+    },
+)
+```
+
+## LiteLLM
+
+[LiteLLM](https://docs.litellm.ai/docs/) is a universal interface for 100+ model providers, with support for local models and custom endpoints.
+
+```python
+rlm = RLM(
+    backend="litellm",
+    backend_kwargs={
+        "model_name": "gpt-5-mini",
+    },
+)
+```
+
+Set provider API keys in environment variables.
+
+## vLLM (Local)
+
+Local model serving.
+
+```bash
+python -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Llama-3-70b \
+    --port 8000
+```
+
+```python
+rlm = RLM(
+    backend="vllm",
+    backend_kwargs={
+        "base_url": "http://localhost:8000/v1",
+        "model_name": "meta-llama/Llama-3-70b",
+    },
+)
+```
+
+## Multiple Backends (Experimental)
+
+This feature allows you to specify ordered lists of backends and model kwargs, so that RLMs can sub-call different language models from within execution code. The order of `other_backends` and `other_backend_kwargs` must match.
+
+```python
+rlm = RLM(
+    backend="openai",
+    backend_kwargs={"model_name": "gpt-5-mini"},
+    other_backends=["anthropic", "openai"],
+    other_backend_kwargs=[
+        {"model_name": "claude-sonnet-4-20250514"},
+        {"model_name": "gpt-4o-mini"},
+    ],
+)
+```
+
+Inside REPL (future releases):
+
+```python
+llm_query("prompt")
+llm_query("prompt", model="claude-sonnet-4-20250514")
+llm_query("prompt", model="gpt-4o-mini")
+```

@@ -1,0 +1,157 @@
+---
+title: Recursive Language Models
+description: Task-agnostic inference for near-infinite contexts
+---
+
+> Work in progress. These docs are minimal and will evolve.
+
+Recursive Language Models (RLMs) are a task-agnostic inference paradigm for language models to handle near-infinite length contexts by enabling the LM to programmatically examine, decompose, and recursively call itself over its input.
+
+RLMs replace the canonical `llm.completion(prompt, model)` call with a `rlm.completion(prompt, model)` call. RLMs offload the context as a variable in a REPL environment that the LM can interact with and launch sub-LM calls inside of.
+
+- [Paper](https://arxiv.org/abs/2512.24601)
+- [GitHub](https://github.com/alexzhang13/rlm)
+
+## Installation
+
+We use `uv`, but any virtual environment works.
+
+```bash
+# Install uv (first time)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Setup project
+uv init && uv venv --python 3.12
+source .venv/bin/activate
+
+# Install RLM in editable mode
+uv pip install -e .
+
+# For Modal sandbox support
+uv pip install -e . --extra modal
+```
+
+Once installed, see the [API](api) and [RLM class](api/rlm) docs.
+
+## Quick Start
+
+### OpenAI
+
+```python
+import os
+from rlm import RLM
+
+rlm = RLM(
+    backend="openai",
+    backend_kwargs={
+        "api_key": os.getenv("OPENAI_API_KEY"),
+        "model_name": "gpt-5-mini",
+    },
+    verbose=False,
+)
+
+result = rlm.completion("Calculate 2^(2^(2^2)) using Python.")
+print(result.response)
+```
+
+### Anthropic
+
+```python
+import os
+from rlm import RLM
+
+rlm = RLM(
+    backend="anthropic",
+    backend_kwargs={
+        "api_key": os.getenv("ANTHROPIC_API_KEY"),
+        "model_name": "claude-sonnet-4-20250514",
+    },
+    verbose=False,
+)
+
+result = rlm.completion("Calculate 2^(2^(2^2)) using Python.")
+print(result.response)
+```
+
+### Portkey
+
+```python
+import os
+from rlm import RLM
+
+rlm = RLM(
+    backend="portkey",
+    backend_kwargs={
+        "api_key": os.getenv("PORTKEY_API_KEY"),
+        "model_name": "@openai/gpt-5-mini",
+    },
+    verbose=False,
+)
+
+result = rlm.completion("Calculate 2^(2^(2^2)) using Python.")
+print(result.response)
+```
+
+## REPL Environments
+
+RLMs execute LM-generated Python code in a sandboxed REPL environment. We support two types of environments: non-isolated and isolated.
+
+### Non-isolated environments
+
+- `local` (default): Same-process execution with sandboxed builtins. Fast but shares memory with host.
+- `docker`: Containerized execution in Docker. Better isolation, reproducible environments.
+
+### Isolated environments
+
+- `modal`: Cloud sandboxes via Modal. Production-ready, fully isolated from host.
+
+### Configuration examples
+
+```python
+rlm = RLM(
+    backend="openai",
+    backend_kwargs={"model_name": "gpt-5-mini"},
+    environment="local",
+)
+```
+
+```python
+rlm = RLM(
+    backend="openai",
+    backend_kwargs={"model_name": "gpt-5-mini"},
+    environment="docker",
+    environment_kwargs={"image": "python:3.11-slim"},
+)
+```
+
+```python
+rlm = RLM(
+    backend="openai",
+    backend_kwargs={"model_name": "gpt-5-mini"},
+    environment="modal",
+    environment_kwargs={"app_name": "my-rlm-app", "timeout": 600},
+)
+```
+
+See `environments` for details on each environment's architecture and configuration.
+
+## Core Components
+
+RLMs indirectly handle contexts by storing them in a persistent REPL environment, where an LM can view and run code inside of. It also has the ability to sub-query (R)LMs (i.e. with `llm_query` calls) and produce a final answer based on this. This design generally requires:
+
+1. Set up a REPL environment, where state is persisted across code execution turns.
+2. Put the prompt (or context) into a programmatic variable.
+3. Allow the model to write code that peeks into and decomposes the variable, and observes any side effects.
+4. Encourage the model, in its code, to recurse over shorter, programmatically constructed prompts.
+
+## Citation
+
+```bibtex
+@misc{zhang2025recursivelanguagemodels,
+      title={Recursive Language Models}, 
+      author={Alex L. Zhang and Tim Kraska and Omar Khattab},
+      year={2025},
+      eprint={2512.24601},
+      archivePrefix={arXiv},
+}
+```
